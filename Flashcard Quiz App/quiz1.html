@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Flashcard Quiz</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="quiz.css">
+</head>
+<body>
+  <div class="main-container">
+    <h1 class="title"> ~ QUIZZ WAVE ~ </h1>
+    <div class="container">
+      <div class="add-flashcard-con">
+        <button id="add-flashcard">Add Flashcard</button>
+        <button id="start-quiz">Start Quiz</button>
+      </div>
+      <div id="card-con">
+        <div class="card-list-container"></div>
+      </div>
+    </div>
+    <div class="question-container hide" id="add-question-card">
+      <h2 id="flashcardhead">FLASHCARD</h2>
+      <div class="wrapper">
+        <div class="error-con">
+          <span class="hide" id="error">Please enter both question and answer. </span>
+        </div>
+        <i class="fa-solid fa-xmark" id="close-btn"></i>
+      </div>
+      <label for="question">QUESTION:</label>
+      <textarea class="input" id="question" placeholder="Type your question here..." rows="4"></textarea>
+      <label for="answer">ANSWER:</label>
+      <textarea class="input" id="answer" rows="6" placeholder="Type your answer here..."></textarea>
+      <button id="save-btn">Save</button>
+    </div>
+    <div class="quiz-container hide" id="quiz-section">
+      <h1 class="start-quiz-title">QUIZ TIME !</h1>
+      <div id="quiz-question"></div>
+      <input type="text" rows="3" id="quiz-answer" placeholder="Type your answer here..."/>
+      <button id="submit-quiz-answer">Submit</button>
+      <button id="restart-quiz">Restart</button>
+      <div id="quiz-feedback"></div>
+      <i class="fa-solid fa-xmark" id="close-quiz-btn"></i>
+    </div>
+  </div>
+  <script src="quiz.js"></script>
+</body>
+</html>
