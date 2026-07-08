@@ -1,174 +1,280 @@
-const container = document.querySelector(".container");
+const flashcardsContainer = document.querySelector(".card-list-container");
 const addQuestionCard = document.getElementById("add-question-card");
-const cardButton = document.getElementById("save-btn");
-const question = document.getElementById("question");
-const answer = document.getElementById("answer");
+const saveBtn = document.getElementById("save-btn");
+const questionInput = document.getElementById("question");
+const answerInput = document.getElementById("answer");
 const errorMessage = document.getElementById("error");
-const addQuestion = document.getElementById("add-flashcard");
+const addFlashcardBtn = document.getElementById("add-flashcard");
 const closeBtn = document.getElementById("close-btn");
-const startQuizButton = document.getElementById("start-quiz");
+const startQuizBtn = document.getElementById("start-quiz");
 const quizSection = document.getElementById("quiz-section");
 const quizQuestion = document.getElementById("quiz-question");
 const quizAnswer = document.getElementById("quiz-answer");
-const submitQuizAnswerButton = document.getElementById("submit-quiz-answer");
-const restartQuizButton = document.getElementById("restart-quiz");
+const submitQuizAnswerBtn = document.getElementById("submit-quiz-answer");
+const restartQuizBtn = document.getElementById("restart-quiz");
 const quizFeedback = document.getElementById("quiz-feedback");
 const closeQuizBtn = document.getElementById("close-quiz-btn");
+const quizProgress = document.getElementById("quiz-progress");
+const deleteAllBtn = document.getElementById("delete-all");
+const emptyState = document.getElementById("empty-state");
 
-let editBool = false;
-let flashcards = [];
+let flashcards = JSON.parse(localStorage.getItem("flashcards")) || [];
+let editCardId = null;
 let currentQuestionIndex = 0;
 let score = 0;
 
-addQuestion.addEventListener("click", () => {
-  container.classList.add("hide");
-  question.value = "";
-  answer.value = "";
-  addQuestionCard.classList.remove("hide");
-});
-
-closeBtn.addEventListener("click", () => {
-  container.classList.remove("hide");
-  addQuestionCard.classList.add("hide");
-  if (editBool) {
-    editBool = false;
-    submitQuestion();
-  }
-});
-
-cardButton.addEventListener("click", () => {
-  editBool = false;
-  tempQuestion = question.value.trim();
-  tempAnswer = answer.value.trim();
-  if (!tempQuestion || !tempAnswer) {
-    errorMessage.classList.remove("hide");
-  } else {
-    container.classList.remove("hide");
-    errorMessage.classList.add("hide");
-    flashcards.push({ question: tempQuestion, answer: tempAnswer });
-    viewlist();
-    question.value = "";
-    answer.value = "";
-  }
-});
-
-function viewlist() {
-  const listCard = document.getElementsByClassName("card-list-container")[0];
-  listCard.innerHTML = '';
-  flashcards.forEach((card, index) => {
-    const div = document.createElement("div");
-    div.classList.add("card");
-    div.innerHTML += `<p class="question-div">${card.question}</p>`;
-    const displayAnswer = document.createElement("p");
-    displayAnswer.classList.add("answer-div", "hide");
-    displayAnswer.innerText = card.answer;
-    const link = document.createElement("a");
-    link.setAttribute("href", "#");
-    link.setAttribute("class", "show-hide-btn");
-    link.innerHTML = "Show/Hide";
-    link.addEventListener("click", () => {
-      displayAnswer.classList.toggle("hide");
-    });
-    div.appendChild(link);
-    div.appendChild(displayAnswer);
-    const buttonsCon = document.createElement("div");
-    buttonsCon.classList.add("buttons-con");
-    const editButton = document.createElement("button");
-    editButton.setAttribute("class", "edit");
-    editButton.innerHTML = `<i class="fa-solid fa-pen-to-square"></i>`;
-    editButton.addEventListener("click", () => {
-      editBool = true;
-      modifyElement(editButton, true);
-      addQuestionCard.classList.remove("hide");
-    });
-    buttonsCon.appendChild(editButton);
-    disableButtons(false);
-    // Delete Button
-    const deleteButton = document.createElement("button");
-    deleteButton.setAttribute("class", "delete");
-    deleteButton.innerHTML = `<i class="fa-solid fa-trash-can"></i>`;
-    deleteButton.addEventListener("click", () => {
-      modifyElement(deleteButton);
-    });
-    buttonsCon.appendChild(deleteButton);
-    div.appendChild(buttonsCon);
-    listCard.appendChild(div);
-  });
-  hideQuestion();
+function saveToLocalStorage() {
+  localStorage.setItem("flashcards", JSON.stringify(flashcards));
 }
 
-const modifyElement = (element, edit = false) => {
-  const parentDiv = element.parentElement.parentElement;
-  const parentQuestion = parentDiv.querySelector(".question-div").innerText;
-  if (edit) {
-    const parentAns = parentDiv.querySelector(".answer-div").innerText;
-    answer.value = parentAns;
-    question.value = parentQuestion;
-    disableButtons(true);
-  }
-  const index = flashcards.findIndex(card => card.question === parentQuestion);
-  if (index !== -1) {
-    flashcards.splice(index, 1);
-  }
-  parentDiv.remove();
-};
+function resetForm() {
+  questionInput.value = "";
+  answerInput.value = "";
+  errorMessage.classList.add("hidden");
+  editCardId = null;
+  saveBtn.textContent = "Save Flashcard";
+}
 
-const disableButtons = (value) => {
-  const editButtons = document.getElementsByClassName("edit");
-  Array.from(editButtons).forEach((element) => {
-    element.disabled = value;
-  });
-};
+function openForm() {
+  addQuestionCard.classList.remove("hidden");
+  questionInput.focus();
+}
 
-startQuizButton.addEventListener("click", () => {
+function closeForm() {
+  addQuestionCard.classList.add("hidden");
+  resetForm();
+}
+
+function renderFlashcards() {
+  flashcardsContainer.innerHTML = "";
+
   if (flashcards.length === 0) {
-    alert("No flashcards added. Please add some flashcards first.");
+    emptyState.classList.remove("hidden");
     return;
   }
-  container.classList.add("hide");
-  quizSection.classList.remove("hide");
-  currentQuestionIndex = 0;
-  score = 0;
-  quizFeedback.innerText = '';
-  showNextQuestion();
-});
 
-const showNextQuestion = () => {
-  if (currentQuestionIndex < flashcards.length) {
-    quizQuestion.innerText = flashcards[currentQuestionIndex].question;
-    quizAnswer.value = '';
-  } else {
-    endQuiz();
-  }
-};
+  emptyState.classList.add("hidden");
 
-submitQuizAnswerButton.addEventListener("click", () => {
-  const userAnswer = quizAnswer.value.trim();
-  if (userAnswer === flashcards[currentQuestionIndex].answer) {
-    score++;
-  }
-  currentQuestionIndex++;
-  showNextQuestion();
-});
+  flashcards.forEach((card) => {
+    const cardElement = document.createElement("div");
+    cardElement.className = "card";
 
-const endQuiz = () => {
-  quizQuestion.innerText = '';
-  quizAnswer.value = '';
-  quizFeedback.innerText = `Quiz completed! Your score is ${score} out of ${flashcards.length}.`;
-};
+    const questionEl = document.createElement("h3");
+    questionEl.textContent = card.question;
 
-restartQuizButton.addEventListener("click", () => {
-  currentQuestionIndex = 0;
-  score = 0;
-  quizFeedback.innerText = '';
-  showNextQuestion();
-});
+    const answerEl = document.createElement("div");
+    answerEl.className = "answer-div hidden";
+    answerEl.textContent = card.answer;
 
-function hideQuestion() {
-  addQuestionCard.classList.add("hide");
+    const cardActions = document.createElement("div");
+    cardActions.className = "card-actions";
+
+    const toggleBtn = document.createElement("button");
+    toggleBtn.className = "small-btn toggle-btn";
+    toggleBtn.textContent = "Show Answer";
+    toggleBtn.addEventListener("click", () => {
+      answerEl.classList.toggle("hidden");
+      toggleBtn.textContent = answerEl.classList.contains("hidden")
+        ? "Show Answer"
+        : "Hide Answer";
+    });
+
+    const actionGroup = document.createElement("div");
+    actionGroup.className = "action-group";
+
+    const editBtn = document.createElement("button");
+    editBtn.className = "small-btn edit-btn";
+    editBtn.innerHTML = `<i class="fa-solid fa-pen"></i>`;
+    editBtn.title = "Edit Flashcard";
+    editBtn.addEventListener("click", () => editFlashcard(card.id));
+
+    const deleteBtn = document.createElement("button");
+    deleteBtn.className = "small-btn delete-btn";
+    deleteBtn.innerHTML = `<i class="fa-solid fa-trash"></i>`;
+    deleteBtn.title = "Delete Flashcard";
+    deleteBtn.addEventListener("click", () => deleteFlashcard(card.id));
+
+    actionGroup.appendChild(editBtn);
+    actionGroup.appendChild(deleteBtn);
+
+    cardActions.appendChild(toggleBtn);
+    cardActions.appendChild(actionGroup);
+
+    cardElement.appendChild(questionEl);
+    cardElement.appendChild(answerEl);
+    cardElement.appendChild(cardActions);
+
+    flashcardsContainer.appendChild(cardElement);
+  });
 }
 
-closeQuizBtn.addEventListener("click", () => {
-  quizSection.classList.add("hide");
-  container.classList.remove("hide");
+function addOrUpdateFlashcard() {
+  const question = questionInput.value.trim();
+  const answer = answerInput.value.trim();
+
+  if (!question || !answer) {
+    errorMessage.classList.remove("hidden");
+    return;
+  }
+
+  errorMessage.classList.add("hidden");
+
+  if (editCardId) {
+    flashcards = flashcards.map((card) =>
+      card.id === editCardId ? { ...card, question, answer } : card
+    );
+  } else {
+    flashcards.push({
+      id: Date.now(),
+      question,
+      answer,
+    });
+  }
+
+  saveToLocalStorage();
+  renderFlashcards();
+  closeForm();
+}
+
+function editFlashcard(id) {
+  const card = flashcards.find((item) => item.id === id);
+  if (!card) return;
+
+  questionInput.value = card.question;
+  answerInput.value = card.answer;
+  editCardId = id;
+  saveBtn.textContent = "Update Flashcard";
+  openForm();
+}
+
+function deleteFlashcard(id) {
+  flashcards = flashcards.filter((card) => card.id !== id);
+  saveToLocalStorage();
+  renderFlashcards();
+}
+
+function deleteAllFlashcards() {
+  if (flashcards.length === 0) return;
+
+  const confirmDelete = confirm("Are you sure you want to delete all flashcards?");
+  if (!confirmDelete) return;
+
+  flashcards = [];
+  saveToLocalStorage();
+  renderFlashcards();
+  closeQuiz();
+}
+
+function startQuiz() {
+  if (flashcards.length === 0) {
+    alert("No flashcards available. Please add some flashcards first.");
+    return;
+  }
+
+  currentQuestionIndex = 0;
+  score = 0;
+  quizFeedback.textContent = "";
+  quizFeedback.className = "quiz-feedback";
+
+  quizSection.classList.remove("hidden");
+  showQuestion();
+}
+
+function showQuestion() {
+  if (currentQuestionIndex >= flashcards.length) {
+    endQuiz();
+    return;
+  }
+
+  const currentCard = flashcards[currentQuestionIndex];
+  quizQuestion.textContent = currentCard.question;
+  quizAnswer.value = "";
+  quizProgress.textContent = `Question ${currentQuestionIndex + 1} of ${flashcards.length}`;
+  quizAnswer.focus();
+}
+
+function submitQuizAnswer() {
+  if (currentQuestionIndex >= flashcards.length) return;
+
+  const userAnswer = quizAnswer.value.trim();
+  if (!userAnswer) {
+    quizFeedback.textContent = "Please enter an answer before submitting.";
+    quizFeedback.className = "quiz-feedback wrong";
+    return;
+  }
+
+  const correctAnswer = flashcards[currentQuestionIndex].answer.trim();
+
+  if (userAnswer.toLowerCase() === correctAnswer.toLowerCase()) {
+    score++;
+    quizFeedback.textContent = "Correct!";
+    quizFeedback.className = "quiz-feedback correct";
+  } else {
+    quizFeedback.textContent = `Incorrect. Correct answer: ${correctAnswer}`;
+    quizFeedback.className = "quiz-feedback wrong";
+  }
+
+  currentQuestionIndex++;
+
+  setTimeout(() => {
+    quizFeedback.textContent = "";
+    quizFeedback.className = "quiz-feedback";
+    showQuestion();
+  }, 1200);
+}
+
+function endQuiz() {
+  quizProgress.textContent = "Quiz Completed";
+  quizQuestion.textContent = "Great job! You've completed the quiz.";
+  quizAnswer.value = "";
+  quizAnswer.style.display = "none";
+  submitQuizAnswerBtn.style.display = "none";
+
+  quizFeedback.innerHTML = `
+    <div class="score-box">
+      Quiz completed! Your score is <strong>${score}</strong> out of <strong>${flashcards.length}</strong>.
+    </div>
+  `;
+}
+
+function restartQuiz() {
+  if (flashcards.length === 0) return;
+
+  quizAnswer.style.display = "block";
+  submitQuizAnswerBtn.style.display = "inline-block";
+  currentQuestionIndex = 0;
+  score = 0;
+  quizFeedback.textContent = "";
+  quizFeedback.className = "quiz-feedback";
+  showQuestion();
+}
+
+function closeQuiz() {
+  quizSection.classList.add("hidden");
+  quizFeedback.textContent = "";
+  quizFeedback.className = "quiz-feedback";
+  quizAnswer.style.display = "block";
+  submitQuizAnswerBtn.style.display = "inline-block";
+}
+
+addFlashcardBtn.addEventListener("click", () => {
+  resetForm();
+  openForm();
 });
+
+closeBtn.addEventListener("click", closeForm);
+saveBtn.addEventListener("click", addOrUpdateFlashcard);
+startQuizBtn.addEventListener("click", startQuiz);
+submitQuizAnswerBtn.addEventListener("click", submitQuizAnswer);
+restartQuizBtn.addEventListener("click", restartQuiz);
+closeQuizBtn.addEventListener("click", closeQuiz);
+deleteAllBtn.addEventListener("click", deleteAllFlashcards);
+
+quizAnswer.addEventListener("keydown", (e) => {
+  if (e.key === "Enter") {
+    e.preventDefault();
+    submitQuizAnswer();
+  }
+});
+
+renderFlashcards();
